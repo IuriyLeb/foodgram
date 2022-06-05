@@ -1,11 +1,14 @@
 from django.db import models
+from django.utils.html import format_html
 from django.contrib.auth.models import User
 
 
 class Tag(models.Model):
-    name = models.TimeField()
+    name = models.CharField(max_length=50)
     color = models.CharField(max_length=50)
     slug = models.SlugField()
+
+
 
 
 class Ingredient(models.Model):
@@ -38,9 +41,9 @@ class Recipe(models.Model):
         through='RecipeIngredient'
     )
     
-    image = models.ImageField()
+    image = models.ImageField(upload_to='images')
     
-    cooking_time = models.TimeField()
+    cooking_time = models.IntegerField()# TODO make int
 
 
 class RecipeIngredient(models.Model):

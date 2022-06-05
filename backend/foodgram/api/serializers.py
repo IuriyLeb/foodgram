@@ -5,7 +5,7 @@ from django.shortcuts import get_object_or_404
 
 
 from users.models import Subscribe
-
+from .fields import RecipeImageField
 
 
 from .models import (Tag, Recipe, RecipeIngredient, RecipeTag,
@@ -30,9 +30,14 @@ class UserSerializer(serializers.ModelSerializer):
                                          user_to_subscribe=obj.id).exists() 
 
 
+class SubscribeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Subscribe
+        fields = ()
+
 class UserSubscribeSerializer(serializers.ModelSerializer):
     is_subscribed = serializers.SerializerMethodField()
-    recipes = RecipeMinifiedSerializer()
+    recipes = RecipeMinifiedSerializer(many=True)
     recipes_count = serializers.SerializerMethodField()
     
     class Meta:
@@ -77,6 +82,10 @@ class RecipeTagSerializer(serializers.ModelSerializer):
     color = serializers.ReadOnlyField(source='tag.color')
     slug = serializers.ReadOnlyField(source='tag.slug')
 
+    class Meta:
+        model = RecipeTag
+        fields = ('id', 'name', 'color', 'slug')
+
 
 class ReadRecipeSerializer(serializers.ModelSerializer):
     tags = RecipeTagSerializer(source='recipetag_set', many=True)
@@ -112,12 +121,13 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
     author = serializers.SlugRelatedField(
         slug_field='username',
         default=serializers.CurrentUserDefault(),
-        read_only=True,
+        queryset=User.objects.all()
     )
     tags = serializers.PrimaryKeyRelatedField(
         queryset=Tag.objects.all(),
         many=True
     )
+    image = RecipeImageField()
 
     class Meta:
         model = Recipe
@@ -126,12 +136,14 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
         
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
+        tags_data = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
         for ingredient in ingredients_data:
-            if Ingredient.objects.filter(id=ingredient['id']).exists():
-                RecipeIngredient.objects.create(recipe=recipe, 
+            RecipeIngredient.objects.create(recipe=recipe,
                                                 ingredient=ingredient['id'],
                                                 amount=ingredient['amount'])
+        for tag in tags_data:
+            RecipeTag.objects.create(recipe=recipe, tag=tag)
         return super().create(validated_data)
 
         

@@ -4,7 +4,7 @@ from .models import Tag, Recipe, Ingredient
 
 class TagAdmin(admin.ModelAdmin):
     list_display = (
-        'name',
+        'name', 'slug', 'color'
     )
 
 
