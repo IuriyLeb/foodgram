@@ -5,7 +5,7 @@ from rest_framework.response import Response
 from rest_framework import viewsets, filters, status
 from .models import Subscribe
 from api.serializers import RecipeMinifiedSerializer
-from api.serializers import UserSubscribeSerializer, UserSerializer
+from api.serializers import UserSubscribeSerializer, UserMinifiedSerializer
 from django.contrib.auth import get_user_model
 
 

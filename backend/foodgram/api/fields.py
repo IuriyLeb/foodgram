@@ -1,11 +1,14 @@
 from rest_framework import serializers
-from django.core.files.base import ContentFile
 from django.core.files.uploadedfile import SimpleUploadedFile
 from PIL import Image
 from io import BytesIO
 import base64
 
+
 class RecipeImageField(serializers.Field):
+    """
+    Get the base64 string and save it into database.
+    """
     def to_representation(self, value):
         return value
 
@@ -15,7 +18,7 @@ class RecipeImageField(serializers.Field):
         image_64_decode = base64.b64decode(imgstr)
         img = Image.open(BytesIO(image_64_decode))
         data = SimpleUploadedFile(
-            name = '1.png',
+            name=f'.{img_format}',
             content=image_64_decode
         )
         return data

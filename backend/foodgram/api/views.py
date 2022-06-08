@@ -5,8 +5,9 @@ from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from .models import *
-from .serializers import *
+from .models import Tag, Ingredient, Recipe, Favorites, ShoppingCart
+from .serializers import (TagSerializer, IngredientSerializer,
+                          ReadRecipeSerializer, WriteRecipeSerializer)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -30,6 +31,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
     #     serializer.save(author=self.request.user,
     #                     is_favorited=False,
     #                     is_in_shopping_cart=False)
+
     def get_serializer_class(self):
         if self.action == 'list' or self.action == 'retrieve':
             return ReadRecipeSerializer
@@ -61,7 +63,6 @@ class RecipeViewSet(viewsets.ModelViewSet):
                 recipe=recipe
             )
             return Response(status=status.HTTP_204_NO_CONTENT)
-        
 
     @action(detail=True, methods=['post', 'delete'])
     def favorite(self, request, pk=None):
