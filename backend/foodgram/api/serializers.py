@@ -133,6 +133,7 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
         model = Recipe
         fields = ('tags', 'author', 'ingredients',
                   'image', 'name', 'text', 'cooking_time')
+        depth = 1
         
     def create(self, validated_data):
         ingredients_data = validated_data.pop('ingredients')
@@ -144,7 +145,7 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
                                                 amount=ingredient['amount'])
         for tag in tags_data:
             RecipeTag.objects.create(recipe=recipe, tag=tag)
-        return super().create(validated_data)
+        return recipe
 
         
         
