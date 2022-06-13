@@ -1,6 +1,8 @@
 from django.test import TestCase
+from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 import tempfile
+from http import HTTPStatus
 from ..models import (Tag, Ingredient, Recipe, RecipeIngredient)
 
 User = get_user_model()
@@ -10,7 +12,7 @@ class RecipeModelTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.user = cls.user = User.objects.create_user(username='test')
+        cls.user = User.objects.create_user(username='test')
 
         cls.tag = Tag.objects.create(
             name='Тестовый тег 1',
@@ -32,5 +34,20 @@ class RecipeModelTest(TestCase):
         cls.recipe.ingredients.add(RecipeModelTest.ingredient,
                                    through_defaults={'amount': 10})
 
-
-    def test_
+    def setUp(self):
+        self.guest_client = APIClient()
+        self.authorized_client = APIClient()
+        self.authorized_client.force_authenticate(user=RecipeModelTest.user)
+    def test_endpoints_existing_at_desired_location(self):
+        """Endpoints exists and available by expected locations."""
+        endpoints_prefix = '/api'
+        endpoints_names = [
+            '/tags/',
+            '/recipes/',
+            '/ingredients/'
+        ]
+        for endpoint in endpoints_names:
+            endpoint = endpoints_prefix + endpoint
+            with self.subTest(endpoint=endpoint):
+                response = self.authorized_client.get(endpoint)
+                self.assertEqual(response.status_code, HTTPStatus.OK)

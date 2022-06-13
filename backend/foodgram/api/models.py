@@ -6,7 +6,6 @@ class Tag(models.Model):
     name = models.CharField(
         verbose_name='Название',
         max_length=50
-
     )
 
     color = models.CharField(
@@ -25,6 +24,7 @@ class Ingredient(models.Model):
         verbose_name='Название',
         max_length=100
     )
+
     measurement_unit = models.CharField(
         verbose_name='Единица измерения',
         max_length=10
@@ -57,13 +57,15 @@ class Recipe(models.Model):
     tags = models.ManyToManyField(
         Tag,
         verbose_name='Теги',
-        through='RecipeTag'
+        through='RecipeTag',
+        related_name='recipes'
     )
 
     ingredients = models.ManyToManyField(
         Ingredient,
         verbose_name='Ингредиенты',
-        through='RecipeIngredient'
+        through='RecipeIngredient',
+        related_name='recipes'
     )
     
     image = models.ImageField(
@@ -93,7 +95,7 @@ class RecipeIngredient(models.Model):
     )
 
     amount = models.FloatField(
-        verbose_name='Количество'
+        verbose_name='Количество',
     )
 
 
@@ -121,6 +123,7 @@ class Favorites(models.Model):
     recipe = models.ForeignKey(
         Recipe,
         on_delete=models.CASCADE,
+        related_name='favorites'
     )
 
 
@@ -133,5 +136,6 @@ class ShoppingCart(models.Model):
 
     recipe = models.ForeignKey(
         Recipe,
-        on_delete=models.CASCADE
+        on_delete=models.CASCADE,
+        related_name='shopping_cart'
     )
