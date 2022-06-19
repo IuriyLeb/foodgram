@@ -1,7 +1,7 @@
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 import tempfile
-from ..models import (Tag, Ingredient, Recipe, RecipeIngredient)
+from api.models import (Tag, Ingredient, Recipe, RecipeIngredient)
 
 User = get_user_model()
 
@@ -38,7 +38,7 @@ class RecipeModelTest(TestCase):
         ingredient = RecipeModelTest.ingredient
         recipe = RecipeModelTest.recipe
 
-        expected_tag_name = tag.name
+        expected_tag_name = tag.slug
         expected_ingredient_name = f'{ingredient.name}, {ingredient.measurement_unit}'
         expected_recipe_name = recipe.name
 

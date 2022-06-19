@@ -1,6 +1,7 @@
 import os
 from datetime import timedelta
 
+import rest_framework.permissions
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
@@ -105,7 +106,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 REST_FRAMEWORK = {
     'DEFAULT_PERMISSION_CLASSES': [
-        #'rest_framework.permissions.AllowAny',
+        'rest_framework.permissions.AllowAny',
     ],
 
     'DEFAULT_AUTHENTICATION_CLASSES': [
@@ -124,6 +125,13 @@ DJOSER = {
     'SET_PASSWORD_RETYPE': False,
     'HIDE_USERS': False,
     'LOGIN_FIELD': 'email',
+    'PERMISSIONS': {
+        'user_create': (rest_framework.permissions.AllowAny,),
+        'token_create': (rest_framework.permissions.AllowAny,),
+        'token_destroy': (rest_framework.permissions.IsAuthenticated,),
+        'password_reset': (rest_framework.permissions.IsAuthenticated,),
+
+    },
     'SERIALIZERS': {
         'user_create': 'users.serializers.CustomUserCreateSerializer',
         'user': 'users.serializers.UserSubscribeSerializer',

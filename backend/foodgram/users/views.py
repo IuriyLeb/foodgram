@@ -1,3 +1,4 @@
+import rest_framework.permissions
 from django.shortcuts import render, get_object_or_404
 from djoser.views import UserViewSet
 from rest_framework.decorators import action
@@ -19,13 +20,18 @@ class FoodgramUserViewSet(UserViewSet):
     pagination_class = DefaultPagination
     serializer_class = UserSubscribeSerializer
 
+    def get_permissions(self):
+        if self.action == 'retrieve':
+            return (rest_framework.permissions.AllowAny(),)
+        return super().get_permissions()
+
     def get_serializer_class(self):
         if self.action in ['list', 'retrieve']:
             return UsersListSerializer
         if self.action == 'subscriptions':
             return UserSubscribeSerializer # TODO WTF
         if self.action == 'me':
-            return UserSubscribeSerializer
+            return UsersListSerializer
         if self.action == 'create':
             return CustomUserCreateSerializer
 

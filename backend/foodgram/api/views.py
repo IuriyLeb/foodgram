@@ -1,3 +1,4 @@
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
 from django.shortcuts import render
 from rest_framework import viewsets, filters, status
 from rest_framework.pagination import LimitOffsetPagination
@@ -19,6 +20,8 @@ from .models import Tag, Ingredient, Recipe, Favorites, ShoppingCart, RecipeIngr
 from .serializers import (TagSerializer, IngredientSerializer,
                           ReadRecipeSerializer, WriteRecipeSerializer)
 from users.models import Subscribe
+from .filters import RecipeFilterSet
+from .permissions import IsAuthorOrAuth
 
 pdfmetrics.registerFont(TTFont('VC',
                                os.path.join(settings.STATIC_ROOT, 'fonts/VinSlabPro-Light_0.ttf')))
@@ -34,19 +37,41 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
+    filter_backends = (filters.SearchFilter,)
+    search_fields = ('name',)
+
 
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
     #queryset = Recipe.objects.all()
     #pagination_class = LimitOffsetPagination
-    #filter_backends = (DjangoFilterBackend,) #filters.SearchFilter)
-    #filterset_fields = ('is_favorited',)
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter] #filters.SearchFilter)
+    # filterset_fields = ('author__id', 'tags__slug')
+    filterset_class = RecipeFilterSet
+    ordering = ('-id',)
    # search_fields = ()
+
+    def get_permissions(self):
+        if self.action in ['list', 'retrieve']:
+            return (AllowAny(),)
+        elif self.action == 'create':
+            return (IsAuthenticated(),)
+        elif self.action in ['update', 'delete']:
+            return (IsAuthorOrAuth(),)
+        return super().get_permissions()
 
     def get_queryset(self):
         if 'is_favorited' in self.request.query_params:
             is_favorited = int(self.request.query_params['is_favorited'])
+            if is_favorited:
+                user = self.request.user.id
+                return Recipe.objects.filter(favorites__user=user)
+        if 'is_in_shopping_cart' in self.request.query_params:
+            is_in_shopping_cart = int(self.request.query_params['is_in_shopping_cart'])
+            if is_in_shopping_cart:
+                user = self.request.user.id
+                return Recipe.objects.filter(shopping_cart__user=user)
             user = self.request.user.id
 
             return Recipe.objects.all()
@@ -79,7 +104,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
         buffer.seek(0)
         return buffer
     
-    @action(detail=False, methods=['get',])
+    @action(detail=False,
+            methods=['get',],
+            permission_classes=[IsAuthenticated,])
     def download_shopping_cart(self, request):
         ingredients_dict = {}
         user = request.user
@@ -102,7 +129,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
 
 
-    @action(detail=True, methods=['post', 'delete'])
+    @action(detail=True,
+            methods=['post', 'delete'],
+            permission_classes=[IsAuthenticated,])
     def shopping_cart(self, request, pk=None):
         if request.method == 'POST':
             recipe = get_object_or_404(Recipe, id=pk)
@@ -125,7 +154,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
             return Response(status=status.HTTP_204_NO_CONTENT)
 
-    @action(detail=True, methods=['post', 'delete'])
+    @action(detail=True,
+            methods=['post', 'delete'],
+            permission_classes=[IsAuthenticated,])
     def favorite(self, request, pk=None):
         if request.method == 'POST':
             recipe = get_object_or_404(Recipe, id=pk)

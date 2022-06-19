@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 import tempfile
 from http import HTTPStatus
-from ..models import (Tag, Ingredient, Recipe, RecipeIngredient)
+from api.models import (Tag, Ingredient, Recipe, RecipeIngredient)
 
 User = get_user_model()
 
@@ -66,7 +66,7 @@ class TagViewSetTest(TestCase):
         }, response.data)
 
     def test_tag_detail(self):
-        response = self.guest_client.get('/api/tags/1/') # TODO hide all variables
+        response = self.authorized_client.get('/api/tags/1/') # TODO hide all variables
         self.assertEqual(response.status_code, HTTPStatus.OK)
         self.assertEqual(response.data,
                          {
@@ -119,16 +119,16 @@ class IngredientViewSetTest(TestCase):
         self.assertEqual(response.status_code, HTTPStatus.OK)
         #print(response.data) # TODO remove all prints
 
-        self.assertIn({
+        self.assertTrue({
             'id':2,
             'name':'Морковь',
             'measurement_unit':'кг.'
-        }, response.data)
-        self.assertIn({
+        } in response.data)
+        self.assertTrue({
             'id':1,
             'name':'Лук',
             'measurement_unit':'шт.'
-        }, response.data)
+        } in response.data)
 
     def test_ingredient_detail(self):
         response = self.guest_client.get('/api/ingredients/1/') # TODO hide all variables
@@ -197,20 +197,20 @@ class RecipeViewSetTest(TestCase):
     #     response = self.guest_client.get('/api/recipes/')
     #
     #     self.assertEqual(response.status_code, HTTPStatus.OK)
-    #     #print(response.data) # TODO remove all prints
+    #     print(response.data) # TODO remove all prints
     #
-    #     self.assertIn({
-    #         'id':1,
-    #         'name':'Тестовый тег 1',
-    #         'color':'#FFFFFF',
-    #         'slug':'test_tag_1'
-    #     }, response.data)
-    #     self.assertIn({
-    #         'id':2,
-    #         'name':'Тестовый тег 2',
-    #         'color':'#FFFFFF',
-    #         'slug':'test_tag_2'
-    #     }, response.data)
+    #     self.assertTrue({
+    #         #'id':1,
+    #         'name':'Луковый пирог',
+    #         # 'color':'#FFFFFF',
+    #         # 'slug':'test_tag_1'
+    #     } in response.data['results'])
+    #     # self.assertTrue({
+    #     #     'id':2,
+    #     #     'name':'Тестовый тег 2',
+    #     #     'color':'#FFFFFF',
+    #     #     'slug':'test_tag_2'
+    #     # } in response.data)
 
     def test_get_recipe_detail(self):
         response = self.authorized_client.get('/api/recipes/1/') # TODO hide all variables
@@ -222,3 +222,66 @@ class RecipeViewSetTest(TestCase):
         #self.assertEqual(response.data['author'],RecipeViewSetTest.recipe_1.author)
         #self.assertEqual(response.data['image'],RecipeViewSetTest.recipe_1.image.url)
         self.assertEqual(response.data['cooking_time'],RecipeViewSetTest.recipe_1.cooking_time)
+
+    def test_create_recipe(self):
+        number_of_recipes = Recipe.objects.all().count()
+        response = self.authorized_client.post('/api/recipes/',
+                                          {
+                                              'ingredients':[
+                                                  {
+                                                      'id': 1,
+                                                      'amount': 10
+                                                  }
+                                              ],
+                                              'tags':[
+                                                  1,2
+                                              ],
+                                              'image':'"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAgMAAABieywaAAAACVBMVEUAAAD///9fX1/S0ecCAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAACklEQVQImWNoAAAAggCByxOyYQAAAABJRU5ErkJggg==",',
+                                              'name':'Тестовый рецепт',
+                                              'text':'Тестовый рецепт',
+                                              'cooking_time':5
+                                          },
+                                          format='json')
+        #self.assertEqual(response.status_code, HTTPStatus.CREATED)
+        #print(response.data)
+
+        self.assertEqual(response.status_code, HTTPStatus.CREATED)
+        self.assertEqual(Recipe.objects.all().count(), number_of_recipes+1)
+        self.assertTrue(
+
+                             'name'
+                             # 'text':'Тестовый рецепт',
+                             # 'cooking_time':5
+                          in response.data)
+        self.assertEqual(response.data['name'], 'Тестовый рецепт')
+
+
+    def test_update_recipe(self):
+        self.authorized_client.patch('/api/recipes/1/',
+                                                   {
+                                                       'ingredients':[
+                                                           {
+                                                               'id': 1,
+                                                               'amount': 10
+                                                           }
+                                                       ],
+                                                       'tags':[
+                                                           1,2
+                                                       ],
+                                                       'image':'"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAgMAAABieywaAAAACVBMVEUAAAD///9fX1/S0ecCAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAACklEQVQImWNoAAAAggCByxOyYQAAAABJRU5ErkJggg==",',
+                                                       'name':'Тестовый рецепт',
+                                                       'text':'Тестовый рецепт',
+                                                       'cooking_time':5
+                                                   },
+                                                   format='json')
+
+        response = self.authorized_client.get('/api/recipes/1/')
+
+        self.assertEqual(response.data['name'], 'Тестовый рецепт')
+
+
+    def test_delete_recipe(self):
+        number_of_recipes = Recipe.objects.all().count()
+        response = self.authorized_client.delete('/api/recipes/1')
+        #self.assertEqual(response.status_code, HTTPStatus.NO_CONTENT)
+        self.assertEqual(User.objects.all().count(), number_of_recipes-1)

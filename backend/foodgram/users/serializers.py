@@ -8,14 +8,6 @@ from api.models import Recipe
 User = get_user_model()
 
 
-# class PaginatedRecipeMinifiedSerializer(pagination.Pagi):
-#     """
-#     Short presentation of Recipe object for list of user's recipes.
-#     """
-#
-#     class Meta:
-#         ob
-
 class RecipeMinifiedSerializer(serializers.ModelSerializer):
     """
     Short representation of Recipe object for list of user's recipes.
@@ -24,6 +16,7 @@ class RecipeMinifiedSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
         fields = ('id', 'name', 'image', 'cooking_time')
+
 
 class CustomUserCreateSerializer(UserCreateSerializer):
     """
@@ -53,11 +46,11 @@ class UsersListSerializer(serializers.ModelSerializer):
         fields = ('email', 'id', 'username', 'first_name', 'last_name', 'is_subscribed')
 
     def get_is_subscribed(self, obj):
-        if self.context['request'].user == AnonymousUser or obj == AnonymousUser:
+        if self.context['request'].user.is_anonymous:
             return False
         return Subscribe.objects.filter(
             subscribing_user=self.context['request'].user,
-            user_to_subscribe=obj.id # TODO
+            user_to_subscribe=obj.id
         ).exists()
 
 
@@ -66,7 +59,6 @@ class UserSubscribeSerializer(serializers.ModelSerializer):
     Serializer for full User object information.
     """
     recipes = serializers.SerializerMethodField()
-    #recipes = PaginatedRecipeMinifiedSerializer(many=True)
     is_subscribed = serializers.SerializerMethodField()
     recipes_count = serializers.SerializerMethodField()
 
@@ -83,22 +75,15 @@ class UserSubscribeSerializer(serializers.ModelSerializer):
             recipes = Recipe.objects.filter(author=obj.id)[:recipes_number]
             serializer = RecipeMinifiedSerializer(recipes, many=True)
             return serializer.data
-            print(obj)
         else:
             recipes = Recipe.objects.filter(author=obj.id)
             serializer = RecipeMinifiedSerializer(recipes, many=True)
             return serializer.data
         pass
 
-
-
     def get_is_subscribed(self, obj):
-        if self.context['request'].user == AnonymousUser or obj == AnonymousUser:
+        if self.context['request'].user.is_anonymous:
             return False
-        print(self.context['request'].query_params)
-        print()
-        if 'recipes_limit' in self.context['request'].query_params:
-            print('Юрий вы победитель')
         return Subscribe.objects.filter(
             subscribing_user=self.context['request'].user,
             user_to_subscribe=obj.id
@@ -106,6 +91,7 @@ class UserSubscribeSerializer(serializers.ModelSerializer):
 
     def get_recipes_count(self, obj):
         return Recipe.objects.filter(author=obj.id).count()
+
 
 class UserMinifiedSerializer(serializers.ModelSerializer): # TODO rename to RecipeAuthorSerializer
     """
@@ -119,20 +105,9 @@ class UserMinifiedSerializer(serializers.ModelSerializer): # TODO rename to Reci
         fields = ('id', 'first_name', 'last_name', 'is_subscribed')
 
     def get_is_subscribed(self, obj):
-        print('!!!!!!!!!!', obj, self.context['request'].user)
-        if self.context['request'].user == AnonymousUser or obj == AnonymousUser:
+        if self.context['request'].user.is_anonymous:
             return False
         return Subscribe.objects.filter(
             subscribing_user=self.context['request'].user,
             user_to_subscribe=obj.id # TODO
         ).exists()
-
-
-class SubscribeSerializer(serializers.ModelSerializer):
-    """
-
-    """
-
-    class Meta:
-        model = Subscribe
-        fields = ()

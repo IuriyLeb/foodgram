@@ -3,7 +3,7 @@ from rest_framework.test import APIClient
 from django.contrib.auth import get_user_model
 import tempfile
 from http import HTTPStatus
-from ..models import (Tag, Ingredient, Recipe, RecipeIngredient)
+from api.models import (Tag, Ingredient, Recipe, RecipeIngredient)
 
 User = get_user_model()
 

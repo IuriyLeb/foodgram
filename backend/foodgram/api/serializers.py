@@ -2,7 +2,7 @@ from rest_framework import serializers
 from django.contrib.auth.models import User, AnonymousUser
 
 from users.models import Subscribe
-from users.serializers import UserMinifiedSerializer
+from users.serializers import UserMinifiedSerializer, UsersListSerializer
 from .fields import RecipeImageField
 from .models import (Tag, Recipe, RecipeIngredient, RecipeTag,
                      Ingredient, Favorites, ShoppingCart)
@@ -86,7 +86,7 @@ class ReadRecipeSerializer(serializers.ModelSerializer):
     Serializer for read the recipe's information.
     """
 
-    author = UserMinifiedSerializer(many=False)
+    author = UsersListSerializer(many=False)
     tags = RecipeTagSerializer(
         source='recipe_tags',
         many=True
@@ -108,16 +108,15 @@ class ReadRecipeSerializer(serializers.ModelSerializer):
         depth = 1
 
     def get_is_favorited(self, obj):
-        if self.context['request'].user == AnonymousUser or obj == AnonymousUser:
+        if self.context['request'].user.is_anonymous:
             return False
-        print(self.context['request'].user)
         return Favorites.objects.filter(
             user=self.context['request'].user,
             recipe=obj.id
         ).exists()
 
     def get_is_in_shopping_cart(self, obj):
-        if self.context['request'].user == AnonymousUser or obj == AnonymousUser:
+        if self.context['request'].user.is_anonymous:
             return False
         return ShoppingCart.objects.filter(
             user=self.context['request'].user,
@@ -153,7 +152,6 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
         depth = 1
 
     def create(self, validated_data):
-        print(validated_data)
         ingredients_data = validated_data.pop('recipe_ingredients')
         tags_data = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
@@ -172,7 +170,7 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop('recipe_ingredients')
-        tags_data = validated_data.pop('tags', None) # TODO check tags can be empty
+        tags_data = validated_data.pop('tags', None)  # TODO check tags can be empty
 
         for (key, value) in validated_data.items():
             setattr(instance, key, value)
@@ -189,76 +187,3 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
                 )
             instance.save()
         return instance
-
-
-# class UserMinifiedSerializer(serializers.ModelSerializer): # TODO rename to RecipeAuthorSerializer
-#     """
-#     Short presentation of User object for recipe's author.
-#     """
-#
-#     #is_subscribed = serializers.SerializerMethodField()
-#
-#     class Meta:
-#         model = User
-#         fields = ('id', 'first_name', 'last_name', 'is_subscribed')
-#
-#     def get_is_subscribed(self, obj):
-#         print('!!!!!!!!!!', obj, self.context['request'].user)
-#         if self.context['request'].user == AnonymousUser or obj == AnonymousUser:
-#             return False
-#         return Subscribe.objects.filter(
-#             subscribing_user=self.context['request'].user,
-#              user_to_subscribe=obj.id # TODO
-#         ).exists()
-
-
-# class SubscribeSerializer(serializers.ModelSerializer):
-#     """
-#
-#     """
-#
-#     class Meta:
-#         model = Subscribe
-#         fields = ()
-
-
-# class UserSubscribeSerializer(serializers.ModelSerializer):
-#     """
-#     Serializer for full User object information.
-#     """
-#
-#     recipes = RecipeMinifiedSerializer(many=True)
-#     #is_subscribed = serializers.SerializerMethodField()
-#     recipes_count = serializers.SerializerMethodField()
-#
-#     class Meta:
-#         model = User
-#         fields = ('email', 'id', 'username',
-#                   'first_name', 'last_name', 'is_subscribed',
-#                   'recipes', 'recipes_count')
-#         depth = 1
-#
-#     def get_is_subscribed(self, obj):
-#         if self.context['request'].user == AnonymousUser or obj == AnonymousUser:
-#             return False
-#         print(self.context['request'].QUERY_PARAMS)
-#         if 'recipes_limit' in self.context['request'].QUERY_PARAMS:
-#             print('Юрий вы победитель')
-#         return Subscribe.objects.filter(
-#             subscribing_user=self.context['request'].user,
-#             user_to_subscribe=obj.id
-#         ).exists()
-#
-#     def get_recipes_count(self, obj):
-#         return Recipe.objects.filter(author=obj.id).count()
-
-
-
-
-
-
-
-
-
-        
-        
