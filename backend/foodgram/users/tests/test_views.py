@@ -1,9 +1,11 @@
-from django.test import TestCase
-from rest_framework.test import APIClient
-from django.contrib.auth import get_user_model
 import tempfile
 from http import HTTPStatus
-from api.models import (Tag, Ingredient, Recipe, RecipeIngredient)
+
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from rest_framework.test import APIClient
+
+from api.models import Ingredient, Recipe, RecipeIngredient, Tag
 
 User = get_user_model()
 
@@ -58,7 +60,6 @@ class UrlsModelTest(TestCase):
                                },
                                           format='json')
         #self.assertEqual(response.status_code, HTTPStatus.CREATED)
-        #print(response.data)
 
         self.assertEqual(response.status_code, HTTPStatus.CREATED)
         self.assertEqual(User.objects.all().count(), number_of_users+1)
@@ -89,7 +90,6 @@ class UrlsModelTest(TestCase):
 
                                           },
                                           format='json')
-        print(response.data)
         self.assertEqual(response.status_code, HTTPStatus.OK)
         token = response.data['auth_token']
 

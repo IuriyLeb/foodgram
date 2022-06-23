@@ -1,7 +1,9 @@
-from django.test import TestCase
-from django.contrib.auth import get_user_model
 import tempfile
-from api.models import (Tag, Ingredient, Recipe, RecipeIngredient)
+
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+
+from api.models import Ingredient, Recipe, RecipeIngredient, Tag
 
 User = get_user_model()
 

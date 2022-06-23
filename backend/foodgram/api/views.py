@@ -1,30 +1,32 @@
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, AllowAny
-from django.shortcuts import render
-from rest_framework import viewsets, filters, status
-from rest_framework.pagination import LimitOffsetPagination
-from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework.decorators import action
-from rest_framework.response import Response
-from django.db.models import OuterRef, Exists
 import io
 import os
+
 from django.conf import settings
-from reportlab.pdfgen import canvas
+from django.db.models import Exists, OuterRef
+from django.http import FileResponse
+from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from reportlab.lib.pagesizes import A5
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.lib.units import mm
-from django.http import FileResponse
-from django.shortcuts import get_object_or_404
-from .models import Tag, Ingredient, Recipe, Favorites, ShoppingCart, RecipeIngredient
-from .serializers import (TagSerializer, IngredientSerializer,
-                          ReadRecipeSerializer, WriteRecipeSerializer)
-from users.models import Subscribe
-from .filters import RecipeFilterSet
-from .permissions import IsAuthorOrAuth
+from reportlab.pdfgen import canvas
+from rest_framework import filters, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.response import Response
 
-pdfmetrics.registerFont(TTFont('VC',
-                               os.path.join(settings.STATIC_ROOT, 'fonts/VinSlabPro-Light_0.ttf')))
+from .filters import RecipeFilterSet
+from .models import (Favorites, Ingredient, Recipe, RecipeIngredient,
+                     ShoppingCart, Tag)
+from .permissions import IsAuthorOrAuth
+from .serializers import (IngredientSerializer, ReadRecipeSerializer,
+                          TagSerializer, WriteRecipeSerializer)
+
+pdfmetrics.registerFont(
+    TTFont('VC', os.path.join(settings.BASE_DIR,
+                              'static_backend/fonts/VinSlabPro-Light_0.ttf')
+           )
+)
 
 
 class TagViewSet(viewsets.ReadOnlyModelViewSet):
@@ -41,16 +43,10 @@ class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
     search_fields = ('name',)
 
 
-
-
 class RecipeViewSet(viewsets.ModelViewSet):
-    #queryset = Recipe.objects.all()
-    #pagination_class = LimitOffsetPagination
-    filter_backends = [DjangoFilterBackend, filters.OrderingFilter] #filters.SearchFilter)
-    # filterset_fields = ('author__id', 'tags__slug')
+    filter_backends = [DjangoFilterBackend, filters.OrderingFilter]
     filterset_class = RecipeFilterSet
     ordering = ('-id',)
-   # search_fields = ()
 
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
@@ -62,76 +58,144 @@ class RecipeViewSet(viewsets.ModelViewSet):
         return super().get_permissions()
 
     def get_queryset(self):
-        if 'is_favorited' in self.request.query_params:
-            is_favorited = int(self.request.query_params['is_favorited'])
-            if is_favorited:
-                user = self.request.user.id
-                return Recipe.objects.filter(favorites__user=user)
-        if 'is_in_shopping_cart' in self.request.query_params:
-            is_in_shopping_cart = int(self.request.query_params['is_in_shopping_cart'])
-            if is_in_shopping_cart:
-                user = self.request.user.id
-                return Recipe.objects.filter(shopping_cart__user=user)
-            user = self.request.user.id
+        user = self.request.user.id
 
-            return Recipe.objects.all()
-        return Recipe.objects.all()
+        is_favorited = Favorites.objects.filter(
+            recipe=OuterRef('pk'),
+            user=user
+        )
+
+        is_in_shopping_cart = Favorites.objects.filter(
+            recipe=OuterRef('pk'),
+            user=user
+        )
+
+        queryset = Recipe.objects.all().annotate(
+            is_favorited=Exists(is_favorited),
+            is_in_shopping_cart=Exists(is_in_shopping_cart)
+        )
+
+        is_favorited = self.request.query_params.get(
+            'is_favorited',
+            False
+        )
+
+        is_in_shopping_cart = self.request.query_params.get(
+            'is_in_shopping_cart',
+            False
+        )
+
+        if is_favorited:
+            return queryset.filter(favorites__user=user)
+        if is_in_shopping_cart:
+            return queryset.filter(shopping_cart__user=user)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.action == 'list' or self.action == 'retrieve':
             return ReadRecipeSerializer
         return WriteRecipeSerializer
 
+    def create(self, request, *args, **kwargs):
+        user = self.request.user.id
+        serializer = self.get_serializer(data=request.data)
+
+        serializer.is_valid(raise_exception=True)
+        instance = serializer.save()
+
+        serializer_dict = {
+            'is_favorited': Favorites.objects.filter(user=user,
+                                                     recipe=instance),
+            'is_in_shopping_cart': ShoppingCart.objects.filter(user=user,
+                                                               recipe=instance)
+            }
+
+        headers = self.get_success_headers(serializer.data)
+        instance_serializer = ReadRecipeSerializer(instance,
+                                                   context={
+                                                       'request': request
+                                                   })
+        serializer_dict.update(instance_serializer.data)
+
+        return Response(serializer_dict,
+                        status=status.HTTP_201_CREATED,
+                        headers=headers)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+
+        serializer = self.get_serializer(
+            instance,
+            data=request.data,
+            partial=partial
+        )
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        instance_serializer = ReadRecipeSerializer(
+            instance,
+            context={'request': request}
+        )
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+
+            instance._prefetched_objects_cache = {}
+
+        return Response(instance_serializer.data)
+
     def render_pdf(self, ingredients):
+
         buffer = io.BytesIO()
         pdf_file = canvas.Canvas(buffer, pagesize=A5)
-        #pdf_file.translate(180, 30)
         x, y = 30, 550
         pdf_file.setFont('VC', 14)
         textobject = pdf_file.beginText(x, y)
+
         for ingredient, quantity in ingredients.items():
             result_string = (
-                    ingredient + f' ({quantity[1]})' +
-                    f' -- ' + f'{quantity[0]}'
+                    ingredient
+                    + f' ({quantity[1]})'
+                    + ' -- '
+                    + f'{quantity[0]}'
             )
             textobject.textLine(result_string)
 
-
         pdf_file.drawText(textobject)
-
         pdf_file.showPage()
         pdf_file.save()
         buffer.seek(0)
         return buffer
-    
+
     @action(detail=False,
-            methods=['get',],
-            permission_classes=[IsAuthenticated,])
+            methods=['get', ],
+            permission_classes=[IsAuthenticated, ])
     def download_shopping_cart(self, request):
         ingredients_dict = {}
         user = request.user
         shopping_cart_set = user.shopping_cart.all()
+
         for shopping_cart in shopping_cart_set:
             recipe = Recipe.objects.get(id=shopping_cart.recipe.id)
             recipes_set = RecipeIngredient.objects.filter(recipe=recipe)
             for recipe in recipes_set:
-                print(recipe.ingredient.name, recipe.amount)
-                if recipe.ingredient.name not in ingredients_dict.keys():
-                    ingredients_dict[recipe.ingredient.name] = [
+                ingr_name = recipe.ingredient.name
+                if ingr_name not in ingredients_dict.keys():
+                    ingredients_dict[ingr_name] = [
                         recipe.amount,
                         recipe.ingredient.measurement_unit
                     ]
                 else:
-                    ingredients_dict[recipe.ingredient.name][0] += recipe.amount
+                    ingredients_dict[ingr_name][0] += recipe.amount
         result = self.render_pdf(ingredients_dict)
-        return FileResponse(result, as_attachment=True, filename='Список покупок.pdf')
-        print(ingredients_dict)
-
-
+        return FileResponse(result,
+                            as_attachment=True,
+                            filename='Список покупок.pdf')
 
     @action(detail=True,
             methods=['post', 'delete'],
-            permission_classes=[IsAuthenticated,])
+            permission_classes=[IsAuthenticated, ])
     def shopping_cart(self, request, pk=None):
         if request.method == 'POST':
             recipe = get_object_or_404(Recipe, id=pk)
@@ -148,15 +212,15 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
         if request.method == 'DELETE':
             recipe = get_object_or_404(Recipe, id=pk)
-            ShoppingCart.objects.delete(
-                user=request.user,
-                recipe=recipe
-            )
+            shopping_cart_object = get_object_or_404(ShoppingCart,
+                                                     user=request.user,
+                                                     recipe=recipe)
+            shopping_cart_object.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
 
     @action(detail=True,
             methods=['post', 'delete'],
-            permission_classes=[IsAuthenticated,])
+            permission_classes=[IsAuthenticated, ])
     def favorite(self, request, pk=None):
         if request.method == 'POST':
             recipe = get_object_or_404(Recipe, id=pk)
@@ -173,8 +237,10 @@ class RecipeViewSet(viewsets.ModelViewSet):
             )
         if request.method == 'DELETE':
             recipe = get_object_or_404(Recipe, id=pk)
-            Favorites.objects.delete(
-                user=request.user,
-                recipe=recipe
-            )
+            try:
+                favorite_object = Favorites.objects.get(user=request.user,
+                                                        recipe=recipe)
+            except Favorites.DoesNotExist:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+            favorite_object.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)

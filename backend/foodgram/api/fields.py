@@ -1,11 +1,9 @@
-import imghdr
-
-from rest_framework import serializers
-from django.core.files.uploadedfile import SimpleUploadedFile
-from PIL import Image
-from io import BytesIO
 import base64
+import imghdr
 import uuid
+
+from django.core.files.uploadedfile import SimpleUploadedFile
+from rest_framework import serializers
 
 
 class RecipeImageField(serializers.Field):

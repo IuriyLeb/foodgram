@@ -2,18 +2,22 @@ import os
 from datetime import timedelta
 
 import rest_framework.permissions
+from dotenv import load_dotenv
+
+load_dotenv()
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 
-SECRET_KEY = 'e&qrpydjb9$7(l+7xmt(zuk)8br3-*(2b%0g951pf#=xnt%_qz'
+SECRET_KEY = os.getenv('SECRET_KEY', default='somesecretkey')
 
 DEBUG = True
 
 ALLOWED_HOSTS = [
     '127.0.0.1',
     'localhost',
-    'testserver'
+    'testserver',
+    'backend'
 ]
 
 
@@ -66,10 +70,20 @@ WSGI_APPLICATION = 'foodgram.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': os.getenv('DB_ENGINE', default='django.db.backends.postgresql'),
+        'NAME': os.getenv('DB_NAME', default='postgres'),
+        'USER': os.getenv('POSTGRES_USER', default='postgres'),
+        'PASSWORD': os.getenv('POSTGRES_PASSWORD', default='postgres'),
+        'HOST': os.getenv('DB_HOST', default='127.0.0.1'),
+        'PORT': os.getenv('DB_PORT', default='8000')
     }
 }
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.sqlite3',
+#         'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+#     }
+#}
 
 AUTH_PASSWORD_VALIDATORS = [
     {
@@ -113,13 +127,9 @@ REST_FRAMEWORK = {
         'rest_framework.authentication.TokenAuthentication',
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE' : 10,
+    'PAGE_SIZE': 6,
 }
 
-# SIMPLE_JWT = {
-#     'ACCESS_TOKEN_LIFETIME': timedelta(days=10),
-#     'AUTH_HEADER_TYPES': ('Token',),
-# }
 
 DJOSER = {
     'SET_PASSWORD_RETYPE': False,
@@ -138,4 +148,3 @@ DJOSER = {
         'current_user': 'users.serializers.UserSubscribeSerializer'
     }
 }
-

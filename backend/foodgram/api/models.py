@@ -1,5 +1,5 @@
-from django.db import models
 from django.contrib.auth.models import User
+from django.db import models
 
 
 class Tag(models.Model):
@@ -67,12 +67,12 @@ class Recipe(models.Model):
         through='RecipeIngredient',
         related_name='recipes'
     )
-    
+
     image = models.ImageField(
         verbose_name='Изображение',
         upload_to='images'
     )
-    
+
     cooking_time = models.PositiveSmallIntegerField(
         verbose_name='Время приготовления'
     )

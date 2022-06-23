@@ -1,11 +1,10 @@
+from django.contrib.auth.models import User
 from rest_framework import serializers
-from django.contrib.auth.models import User, AnonymousUser
 
-from users.models import Subscribe
-from users.serializers import UserMinifiedSerializer, UsersListSerializer
+from users.serializers import UsersListSerializer
+
 from .fields import RecipeImageField
-from .models import (Tag, Recipe, RecipeIngredient, RecipeTag,
-                     Ingredient, Favorites, ShoppingCart)
+from .models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -28,30 +27,24 @@ class IngredientSerializer(serializers.ModelSerializer):
         fields = ('id', 'name', 'measurement_unit')
 
 
-class RecipeMinifiedSerializer(serializers.ModelSerializer):
-    """
-    Short representation of Recipe object for list of user's recipes.
-    """
-
-    class Meta:
-        model = Recipe
-        fields = ('id', 'name', 'image', 'cooking_time')
-
-
 class ReadRecipeIngredientSerializer(serializers.ModelSerializer):
     """
     Serializer for read the list of recipe's ingredients.
     """
 
-    id = serializers.ReadOnlyField(source='ingredient.id')
-    ingredient = serializers.ReadOnlyField(source='ingredient.name')
+    id = serializers.ReadOnlyField(
+        source='ingredient.id'
+    )
+    name = serializers.ReadOnlyField(
+        source='ingredient.name'
+    )
     measurement_unit = serializers.ReadOnlyField(
         source='ingredient.measurement_unit'
     )
 
     class Meta:
         model = RecipeIngredient
-        fields = ('id', 'ingredient', 'measurement_unit', 'amount')
+        fields = ('id', 'name', 'measurement_unit', 'amount')
 
 
 class WriteRecipeIngredientSerializer(serializers.ModelSerializer):
@@ -59,7 +52,9 @@ class WriteRecipeIngredientSerializer(serializers.ModelSerializer):
     Serializer for write the list of recipe's ingredients.
     """
 
-    id = serializers.PrimaryKeyRelatedField(queryset=Ingredient.objects.all())
+    id = serializers.PrimaryKeyRelatedField(
+        queryset=Ingredient.objects.all()
+    )
 
     class Meta:
         model = RecipeIngredient
@@ -83,7 +78,7 @@ class RecipeTagSerializer(serializers.ModelSerializer):
 
 class ReadRecipeSerializer(serializers.ModelSerializer):
     """
-    Serializer for read the recipe's information.
+    Serializer for read the full  information about recipe.
     """
 
     author = UsersListSerializer(many=False)
@@ -95,8 +90,8 @@ class ReadRecipeSerializer(serializers.ModelSerializer):
         source='recipe_ingredients',
         many=True
     )
-    is_favorited = serializers.SerializerMethodField()
-    is_in_shopping_cart = serializers.SerializerMethodField()
+    is_favorited = serializers.BooleanField(default=False)
+    is_in_shopping_cart = serializers.BooleanField(default=False)
 
     class Meta:
         model = Recipe
@@ -107,22 +102,6 @@ class ReadRecipeSerializer(serializers.ModelSerializer):
         read_only_fields = ('author', 'is_favorited', 'is_in_shopping_cart')
         depth = 1
 
-    def get_is_favorited(self, obj):
-        if self.context['request'].user.is_anonymous:
-            return False
-        return Favorites.objects.filter(
-            user=self.context['request'].user,
-            recipe=obj.id
-        ).exists()
-
-    def get_is_in_shopping_cart(self, obj):
-        if self.context['request'].user.is_anonymous:
-            return False
-        return ShoppingCart.objects.filter(
-            user=self.context['request'].user,
-            recipe=obj.id
-        ).exists()
-
 
 class WriteRecipeSerializer(serializers.ModelSerializer):
     """
@@ -132,7 +111,6 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
     ingredients = WriteRecipeIngredientSerializer(
         many=True,
         source='recipe_ingredients',
-
     )
     author = serializers.SlugRelatedField(
         slug_field='username',
@@ -170,13 +148,13 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         ingredients_data = validated_data.pop('recipe_ingredients')
-        tags_data = validated_data.pop('tags', None)  # TODO check tags can be empty
+        tags_data = validated_data.pop('tags', None)
 
         for (key, value) in validated_data.items():
             setattr(instance, key, value)
             instance.ingredients.clear()
             instance.tags.clear()
-            if tags_data is not None:
+            if tags_data:
                 for tag in tags_data:
                     RecipeTag.objects.create(recipe=instance, tag=tag)
             for ingredient in ingredients_data:

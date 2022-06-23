@@ -1,9 +1,11 @@
-from django.test import TestCase
-from rest_framework.test import APIClient
-from django.contrib.auth import get_user_model
 import tempfile
 from http import HTTPStatus
-from api.models import (Tag, Ingredient, Recipe, RecipeIngredient)
+
+from django.contrib.auth import get_user_model
+from django.test import TestCase
+from rest_framework.test import APIClient
+
+from api.models import Ingredient, Recipe, RecipeIngredient, Tag
 
 User = get_user_model()
 
@@ -50,7 +52,6 @@ class TagViewSetTest(TestCase):
         response = self.guest_client.get('/api/tags/')
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        #print(response.data) # TODO remove all prints
 
         self.assertIn({
             'id':1,
@@ -117,7 +118,6 @@ class IngredientViewSetTest(TestCase):
         response = self.guest_client.get('/api/ingredients/')
 
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        #print(response.data) # TODO remove all prints
 
         self.assertTrue({
             'id':2,
@@ -197,7 +197,6 @@ class RecipeViewSetTest(TestCase):
     #     response = self.guest_client.get('/api/recipes/')
     #
     #     self.assertEqual(response.status_code, HTTPStatus.OK)
-    #     print(response.data) # TODO remove all prints
     #
     #     self.assertTrue({
     #         #'id':1,
@@ -215,7 +214,6 @@ class RecipeViewSetTest(TestCase):
     def test_get_recipe_detail(self):
         response = self.authorized_client.get('/api/recipes/1/') # TODO hide all variables
         self.assertEqual(response.status_code, HTTPStatus.OK)
-        print(response.data)
         self.assertEqual(response.data['id'],RecipeViewSetTest.recipe_1.id)
         self.assertEqual(response.data['name'],RecipeViewSetTest.recipe_1.name)
         self.assertEqual(response.data['text'],RecipeViewSetTest.recipe_1.text)
@@ -243,7 +241,6 @@ class RecipeViewSetTest(TestCase):
                                           },
                                           format='json')
         #self.assertEqual(response.status_code, HTTPStatus.CREATED)
-        #print(response.data)
 
         self.assertEqual(response.status_code, HTTPStatus.CREATED)
         self.assertEqual(Recipe.objects.all().count(), number_of_recipes+1)
