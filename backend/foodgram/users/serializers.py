@@ -2,7 +2,7 @@ from django.contrib.auth import get_user_model
 from djoser.serializers import UserCreateSerializer
 from rest_framework import serializers
 
-from api.models import Recipe
+from recipes.models import Recipe
 
 User = get_user_model()
 
@@ -45,22 +45,17 @@ class UsersListSerializer(serializers.ModelSerializer):
         fields = ('email', 'id', 'username',
                   'first_name', 'last_name', 'is_subscribed')
 
-    # def get_is_subscribed(self, obj):
-    #     if self.context['request'].user.is_anonymous:
-    #         return False
-    #     return Subscribe.objects.filter(
-    #         subscribing_user=self.context['request'].user,
-    #         user_to_subscribe=obj.id
-    #     ).exists()
-
 
 class UserSubscribeSerializer(serializers.ModelSerializer):
     """
     Serializer for full User object information.
     """
     recipes = serializers.SerializerMethodField()
-    is_subscribed = serializers.BooleanField()
-    recipes_count = serializers.SerializerMethodField()
+    is_subscribed = serializers.BooleanField(default=False)
+    recipes_count = serializers.IntegerField(
+        source='recipes.count',
+        read_only=True
+    )
 
     class Meta:
         model = User
@@ -76,39 +71,6 @@ class UserSubscribeSerializer(serializers.ModelSerializer):
             recipes = Recipe.objects.filter(author=obj.id)[:recipes_number]
             serializer = RecipeMinifiedSerializer(recipes, many=True)
             return serializer.data
-        else:
-            recipes = Recipe.objects.filter(author=obj.id)
-            serializer = RecipeMinifiedSerializer(recipes, many=True)
-            return serializer.data
-        pass
-
-    # def get_is_subscribed(self, obj):
-    #     if self.context['request'].user.is_anonymous:
-    #         return False
-    #     return Subscribe.objects.filter(
-    #         subscribing_user=self.context['request'].user,
-    #         user_to_subscribe=obj.id
-    #     ).exists()
-
-    def get_recipes_count(self, obj):
-        return Recipe.objects.filter(author=obj.id).count()
-
-
-# class UserMinifiedSerializer(serializers.ModelSerializer):
-#     """
-#     Short presentation of User object for recipe's author.
-#     """
-#
-#     is_subscribed = serializers.SerializerMethodField()
-#
-#     class Meta:
-#         model = User
-#         fields = ('id', 'first_name', 'last_name', 'is_subscribed')
-#
-#     def get_is_subscribed(self, obj):
-#         if self.context['request'].user.is_anonymous:
-#             return False
-#         return Subscribe.objects.filter(
-#             subscribing_user=self.context['request'].user,
-#             user_to_subscribe=obj.id
-#         ).exists()
+        recipes = Recipe.objects.filter(author=obj.id)
+        serializer = RecipeMinifiedSerializer(recipes, many=True)
+        return serializer.data

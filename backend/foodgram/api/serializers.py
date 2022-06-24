@@ -4,7 +4,7 @@ from rest_framework import serializers
 from users.serializers import UsersListSerializer
 
 from .fields import RecipeImageField
-from .models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
+from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 
 
 class TagSerializer(serializers.ModelSerializer):
@@ -134,15 +134,26 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
         tags_data = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
 
+        ingredients_list = []
         for ingredient in ingredients_data:
-            RecipeIngredient.objects.create(
-                recipe=recipe,
-                ingredient=ingredient['id'],
-                amount=ingredient['amount']
+            ingredients_list.append(
+                RecipeIngredient(
+                    recipe=recipe,
+                    ingredient=ingredient['id'],
+                    amount=ingredient['amount']
+                )
             )
+        RecipeIngredient.objects.bulk_create(ingredients_list)
 
+        tags_list = []
         for tag in tags_data:
-            RecipeTag.objects.create(recipe=recipe, tag=tag)
+            tags_list.append(
+                RecipeTag(
+                    recipe=recipe,
+                    tag=tag
+                )
+            )
+        RecipeTag.objects.bulk_create(tags_list)
 
         return recipe
 
@@ -155,13 +166,22 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
             instance.ingredients.clear()
             instance.tags.clear()
             if tags_data:
+                tags_list = []
                 for tag in tags_data:
-                    RecipeTag.objects.create(recipe=instance, tag=tag)
+                    tags_list.append(
+                        RecipeTag(recipe=instance, tag=tag)
+                    )
+                RecipeTag.objects.bulk_create(tags_list)
+
+            ingredients_list = []
             for ingredient in ingredients_data:
-                RecipeIngredient.objects.create(
-                    recipe=instance,
-                    ingredient=ingredient['id'],
-                    amount=ingredient['amount']
+                ingredients_list.append(
+                    RecipeIngredient(
+                        recipe=instance,
+                        ingredient=ingredient['id'],
+                        amount=ingredient['amount']
+                    )
                 )
+            RecipeIngredient.objects.bulk_create(ingredients_list)
             instance.save()
         return instance

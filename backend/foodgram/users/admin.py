@@ -1,3 +1,14 @@
 from django.contrib import admin
 
-# Register your models here.
+from .models import Subscribe
+
+
+class SubscribeAdmin(admin.ModelAdmin):
+    list_display = (
+        'subscribing_user',
+        'user_to_subscribe'
+    )
+
+
+admin.site.register(Subscribe, SubscribeAdmin)
+

@@ -16,8 +16,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .filters import RecipeFilterSet
-from .models import (Favorites, Ingredient, Recipe, RecipeIngredient,
-                     ShoppingCart, Tag)
+from recipes.models import (Favorites, Ingredient, Recipe, RecipeIngredient,
+                                             ShoppingCart, Tag)
 from .permissions import IsAuthorOrAuth
 from .serializers import (IngredientSerializer, ReadRecipeSerializer,
                           TagSerializer, WriteRecipeSerializer)
@@ -51,9 +51,9 @@ class RecipeViewSet(viewsets.ModelViewSet):
     def get_permissions(self):
         if self.action in ['list', 'retrieve']:
             return (AllowAny(),)
-        elif self.action == 'create':
+        if self.action == 'create':
             return (IsAuthenticated(),)
-        elif self.action in ['update', 'delete']:
+        if self.action in ['update', 'delete']:
             return (IsAuthorOrAuth(),)
         return super().get_permissions()
 

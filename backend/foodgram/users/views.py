@@ -8,7 +8,6 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from api.pagination import DefaultPagination
-
 from .models import Subscribe
 from .serializers import (CustomUserCreateSerializer, UsersListSerializer,
                           UserSubscribeSerializer)
@@ -49,8 +48,8 @@ class FoodgramUserViewSet(UserViewSet):
             return CustomUserCreateSerializer
         return super().get_serializer_class()
 
-    def permission_denied(self, request, **kwargs):
-        pass
+    # def permission_denied(self, request, **kwargs):
+    #     pass
 
     @action(
         detail=False,

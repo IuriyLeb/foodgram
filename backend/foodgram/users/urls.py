@@ -5,7 +5,7 @@ from .views import FoodgramUserViewSet
 
 router = DefaultRouter()
 router.register(
-    r'users',
+    'users',
     FoodgramUserViewSet,
     basename='user'
 )
