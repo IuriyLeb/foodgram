@@ -1,6 +1,5 @@
 import tempfile
 
-
 test_user_1 = {
     "email": "vpupkin@yandex.ru",
     "username": "vasya.pupkins",

@@ -6,6 +6,8 @@ from django.db.models import Exists, OuterRef
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
+from recipes.models import (Favorites, Ingredient, Recipe, RecipeIngredient,
+                            ShoppingCart, Tag)
 from reportlab.lib.pagesizes import A5
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
@@ -16,8 +18,6 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .filters import RecipeFilterSet
-from recipes.models import (Favorites, Ingredient, Recipe,
-                            RecipeIngredient, ShoppingCart, Tag)
 from .permissions import IsAuthorOrAuth
 from .serializers import (IngredientSerializer, ReadRecipeSerializer,
                           TagSerializer, WriteRecipeSerializer)

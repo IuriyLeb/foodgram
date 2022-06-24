@@ -2,9 +2,9 @@ from http import HTTPStatus
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from rest_framework.test import APIClient
 
-from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 from .test_data import *
 
 User = get_user_model()
