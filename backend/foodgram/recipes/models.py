@@ -5,7 +5,8 @@ from django.db import models
 class Tag(models.Model):
     name = models.CharField(
         verbose_name='Название',
-        max_length=50
+        max_length=50,
+        unique=True
     )
 
     color = models.CharField(
@@ -14,6 +15,10 @@ class Tag(models.Model):
     )
 
     slug = models.SlugField()
+
+    class Meta:
+        verbose_name = 'Тег'
+        verbose_name_plural = 'Теги'
 
     def __str__(self):
         return self.slug
@@ -29,6 +34,10 @@ class Ingredient(models.Model):
         verbose_name='Единица измерения',
         max_length=10
     )
+
+    class Meta:
+        verbose_name = 'Ингредиент'
+        verbose_name_plural = 'Ингредиенты'
 
     def __str__(self):
         return f'{self.name}, {self.measurement_unit}'
@@ -77,6 +86,10 @@ class Recipe(models.Model):
         verbose_name='Время приготовления'
     )
 
+    class Meta:
+        verbose_name = 'Рецепт'
+        verbose_name_plural = 'Рецепты'
+
     def __str__(self):
         return self.name
 
@@ -98,6 +111,17 @@ class RecipeIngredient(models.Model):
         verbose_name='Количество',
     )
 
+    class Meta:
+        verbose_name = 'Ингредиент рецепта'
+        verbose_name_plural = 'Ингредиенты рецептов'
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'ingredient'],
+                name='unique_ingredients'
+            )
+        ]
+
 
 class RecipeTag(models.Model):
     recipe = models.ForeignKey(
@@ -111,6 +135,17 @@ class RecipeTag(models.Model):
         on_delete=models.CASCADE,
         related_name='tags_recipes'
     )
+
+    class Meta:
+        verbose_name = 'Тег рецепта'
+        verbose_name_plural = 'Теги рецептов'
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=['recipe', 'tag'],
+                name='unique_tags'
+            )
+        ]
 
 
 class Favorites(models.Model):
@@ -126,6 +161,17 @@ class Favorites(models.Model):
         related_name='favorites'
     )
 
+    class Meta:
+        verbose_name = 'Избранное'
+        verbose_name_plural = 'Избранные'
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_favorites'
+            )
+        ]
+
 
 class ShoppingCart(models.Model):
     user = models.ForeignKey(
@@ -139,3 +185,14 @@ class ShoppingCart(models.Model):
         on_delete=models.CASCADE,
         related_name='shopping_cart'
     )
+
+    class Meta:
+        verbose_name = 'Список покупок'
+        verbose_name_plural = 'Списки покупок'
+
+        constraints = [
+            models.UniqueConstraint(
+                fields=['user', 'recipe'],
+                name='unique_shopping_cart'
+            )
+        ]

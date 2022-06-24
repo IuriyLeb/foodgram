@@ -5,19 +5,19 @@ from .views import IngredientViewSet, RecipeViewSet, TagViewSet
 
 router = DefaultRouter()
 router.register(
-    r'tags',
+    'tags',
     TagViewSet,
     basename='tag'
 )
 
 router.register(
-    r'recipes',
+    'recipes',
     RecipeViewSet,
     basename='recipe'
 )
 
 router.register(
-    r'ingredients',
+    'ingredients',
     IngredientViewSet,
     basename='ingredient'
 )
