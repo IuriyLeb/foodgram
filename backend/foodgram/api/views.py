@@ -16,8 +16,8 @@ from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from .filters import RecipeFilterSet
-from recipes.models import (Favorites, Ingredient, Recipe, RecipeIngredient,
-                                             ShoppingCart, Tag)
+from recipes.models import (Favorites, Ingredient, Recipe,
+                            RecipeIngredient, ShoppingCart, Tag)
 from .permissions import IsAuthorOrAuth
 from .serializers import (IngredientSerializer, ReadRecipeSerializer,
                           TagSerializer, WriteRecipeSerializer)
@@ -109,7 +109,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                                                      recipe=instance),
             'is_in_shopping_cart': ShoppingCart.objects.filter(user=user,
                                                                recipe=instance)
-            }
+        }
 
         headers = self.get_success_headers(serializer.data)
         instance_serializer = ReadRecipeSerializer(instance,
@@ -155,11 +155,12 @@ class RecipeViewSet(viewsets.ModelViewSet):
 
         for ingredient, quantity in ingredients.items():
             result_string = (
-                    ingredient
-                    + f' ({quantity[1]})'
-                    + ' -- '
-                    + f'{quantity[0]}'
+                ingredient
+                + f' ({quantity[1]})'
+                + ' -- '
+                + f'{quantity[0]}'
             )
+
             textobject.textLine(result_string)
 
         pdf_file.drawText(textobject)

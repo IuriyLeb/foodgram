@@ -5,48 +5,41 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 from rest_framework.test import APIClient
 
-from api.models import Ingredient, Recipe, RecipeIngredient, Tag
+from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
+from .test_data import *
 
 User = get_user_model()
+
 
 class UrlsModelTest(TestCase):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
-        cls.test_user_1 = User.objects.create_user(email='test@test.com',
-                                            username='test',
-                                            first_name='Test',
-                                            last_name='One')
+        # cls.test_user_1 = User.objects.create_user(**test_user_1)
+        # test_user_1.update({'id': UrlsModelTest.test_user_1.id})
 
-        cls.test_user_2 = User.objects.create_user(email='test2@test.com',
-                                                   username='test2',
-                                                   first_name='Test',
-                                                   last_name='Two')
+        cls.test_user_2 = User.objects.create_user(**test_user_2)
+        test_user_1.update({'id': UrlsModelTest.test_user_2.id})
 
-        cls.tag = Tag.objects.create(
-            name='Тестовый тег 1',
-            color='#FFFFFF',
-            slug='test_tag_1'
-        )
-        cls.ingredient = Ingredient.objects.create(
-            name='Лук',
-            measurement_unit='шт.'
-        )
-        cls.recipe = Recipe.objects.create(
-            name='Луковый пирог',
-            text='Вкуснейший пирог на всем свете',
-            author=UrlsModelTest.test_user_1,
-            image=tempfile.NamedTemporaryFile(suffix=".jpg").name,
-            cooking_time=10
-        )
+        cls.tag = Tag.objects.create(**test_tag_1)
+        test_tag_1.update({'id': UrlsModelTest.tag.id})
+
+        cls.ingredient = Ingredient.objects.create(**test_ingredient_1)
+        test_ingredient_1.update({'id': UrlsModelTest.ingredient.id})
+
+        cls.recipe = Recipe.objects.create(**test_recipe_1,
+                                           author=UrlsModelTest.test_user_2)
+
         cls.recipe.tags.add(UrlsModelTest.tag)
         cls.recipe.ingredients.add(UrlsModelTest.ingredient,
                                    through_defaults={'amount': 10})
 
+        test_recipe_1.update({'id': UrlsModelTest.recipe.id})
+
     def setUp(self):
         self.guest_client = APIClient()
         self.authorized_client = APIClient()
-        self.authorized_client.force_authenticate(user=UrlsModelTest.test_user_1)
+        self.authorized_client.force_authenticate(user=UrlsModelTest.test_user_2)
 
     def test_create_user(self):
         number_of_users = User.objects.all().count()
@@ -59,7 +52,7 @@ class UrlsModelTest(TestCase):
                                    "password": "1QwErTy123"
                                },
                                           format='json')
-        #self.assertEqual(response.status_code, HTTPStatus.CREATED)
+        self.assertEqual(response.status_code, HTTPStatus.CREATED)
 
         self.assertEqual(response.status_code, HTTPStatus.CREATED)
         self.assertEqual(User.objects.all().count(), number_of_users+1)
@@ -67,7 +60,7 @@ class UrlsModelTest(TestCase):
                          {
                              "email": "vpupkin@yandex.ru",
                              "username": "vasya.pupkin",
-                             "id": 3,
+                             "id": User.objects.get(email="vpupkin@yandex.ru").id,
                              "first_name": "Вася",
                              "last_name": "Пупкин",
                          })

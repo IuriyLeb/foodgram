@@ -54,7 +54,7 @@ class FoodgramUserViewSet(UserViewSet):
     @action(
         detail=False,
         methods=['get', 'list'],
-        )
+    )
     def subscriptions(self, request):
 
         user = request.user
