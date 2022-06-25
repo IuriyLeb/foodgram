@@ -1,5 +1,6 @@
 # Foodgram
 ![workflow status](https://github.com/IuriyLeb/foodgram-project-react/actions/workflows/main.yml/badge.svg)
+
 Foodgram is a service for creating recipes.
 
 Users can create recipes, add it to favorites and in shopping cart.
