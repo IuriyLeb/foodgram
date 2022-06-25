@@ -5,12 +5,9 @@ from django.db.models import Exists, OuterRef
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from recipes.models import (Favorites, Ingredient, Recipe, RecipeIngredient,
-                            ShoppingCart, Tag)
-from reportlab.lib.pagesizes import A5
+from recipes.models import (Favorites, Ingredient, Recipe, ShoppingCart, Tag)
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated

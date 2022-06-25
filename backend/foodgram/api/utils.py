@@ -25,6 +25,7 @@ def process_shopping_cart(shopping_cart_set):
             else:
                 ingredients_dict[ingr_name][0] += recipe.amount
 
+
 def render_pdf(ingredients):
     """
     Get ingredients dictionary({ingredient_name: [amount, measurement_unit]}).
@@ -38,10 +39,10 @@ def render_pdf(ingredients):
 
     for ingredient, quantity in ingredients.items():
         result_string = (
-                ingredient
-                + f' ({quantity[1]})'
-                + ' -- '
-                + f'{quantity[0]}'
+            ingredient
+            + f' ({quantity[1]})'
+            + ' -- '
+            + f'{quantity[0]}'
         )
 
         textobject.textLine(result_string)
