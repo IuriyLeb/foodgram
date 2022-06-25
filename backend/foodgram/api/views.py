@@ -1,4 +1,3 @@
-import io
 import os
 
 from django.conf import settings
@@ -6,21 +5,20 @@ from django.db.models import Exists, OuterRef
 from django.http import FileResponse
 from django.shortcuts import get_object_or_404
 from django_filters.rest_framework import DjangoFilterBackend
-from reportlab.lib.pagesizes import A5
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
-from reportlab.pdfgen import canvas
 from rest_framework import filters, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
+from recipes.models import Favorites, Ingredient, Recipe, ShoppingCart, Tag
+
 from .filters import RecipeFilterSet
-from recipes.models import (Favorites, Ingredient, Recipe, RecipeIngredient,
-                                             ShoppingCart, Tag)
 from .permissions import IsAuthorOrAuth
 from .serializers import (IngredientSerializer, ReadRecipeSerializer,
                           TagSerializer, WriteRecipeSerializer)
+from .utils import process_shopping_cart, render_pdf
 
 pdfmetrics.registerFont(
     TTFont('VC', os.path.join(settings.BASE_DIR,
@@ -109,7 +107,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
                                                      recipe=instance),
             'is_in_shopping_cart': ShoppingCart.objects.filter(user=user,
                                                                recipe=instance)
-            }
+        }
 
         headers = self.get_success_headers(serializer.data)
         instance_serializer = ReadRecipeSerializer(instance,
@@ -140,55 +138,19 @@ class RecipeViewSet(viewsets.ModelViewSet):
         )
 
         if getattr(instance, '_prefetched_objects_cache', None):
-
             instance._prefetched_objects_cache = {}
 
         return Response(instance_serializer.data)
-
-    def render_pdf(self, ingredients):
-
-        buffer = io.BytesIO()
-        pdf_file = canvas.Canvas(buffer, pagesize=A5)
-        x, y = 30, 550
-        pdf_file.setFont('VC', 14)
-        textobject = pdf_file.beginText(x, y)
-
-        for ingredient, quantity in ingredients.items():
-            result_string = (
-                    ingredient
-                    + f' ({quantity[1]})'
-                    + ' -- '
-                    + f'{quantity[0]}'
-            )
-            textobject.textLine(result_string)
-
-        pdf_file.drawText(textobject)
-        pdf_file.showPage()
-        pdf_file.save()
-        buffer.seek(0)
-        return buffer
 
     @action(detail=False,
             methods=['get', ],
             permission_classes=[IsAuthenticated, ])
     def download_shopping_cart(self, request):
-        ingredients_dict = {}
+
         user = request.user
         shopping_cart_set = user.shopping_cart.all()
-
-        for shopping_cart in shopping_cart_set:
-            recipe = Recipe.objects.get(id=shopping_cart.recipe.id)
-            recipes_set = RecipeIngredient.objects.filter(recipe=recipe)
-            for recipe in recipes_set:
-                ingr_name = recipe.ingredient.name
-                if ingr_name not in ingredients_dict.keys():
-                    ingredients_dict[ingr_name] = [
-                        recipe.amount,
-                        recipe.ingredient.measurement_unit
-                    ]
-                else:
-                    ingredients_dict[ingr_name][0] += recipe.amount
-        result = self.render_pdf(ingredients_dict)
+        ingredients_dict = process_shopping_cart(shopping_cart_set)
+        result = render_pdf(ingredients_dict)
         return FileResponse(result,
                             as_attachment=True,
                             filename='Список покупок.pdf')

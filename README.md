@@ -1,7 +1,5 @@
 # Foodgram
-
-WORK IN PROGRESS
-
+![workflow status](https://github.com/IuriyLeb/foodgram-project-react/actions/workflows/main.yml/badge.svg)
 Foodgram is a service for creating recipes.
 
 Users can create recipes, add it to favorites and in shopping cart.
@@ -14,7 +12,7 @@ Also users can subscribe to another users.
 Use the [DockerHub](https://hub.docker.com/) to download YaMDB image.
 
 ```bash
-docker pull ileeb/foodgram 
+docker pull ileeb/foodgram
 ```
 After download, you need to run image and set enviromental variables
 ```
@@ -56,7 +54,7 @@ This project was done as a part of learning in [Yandex.Practicum](https://practi
 If you have any suggestions/comments, open pull requests or contact me by email.
 
 ### Contributing
-Project is available in :
+Project is available in : [http://51.250.16.204/](http://51.250.16.204/)
 
 
 Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
