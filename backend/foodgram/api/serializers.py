@@ -1,6 +1,7 @@
 from django.contrib.auth.models import User
-from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 from rest_framework import serializers
+
+from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
 from users.serializers import UsersListSerializer
 
 from .fields import RecipeImageField

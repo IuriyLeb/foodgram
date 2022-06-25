@@ -1,8 +1,9 @@
 import io
 
-from recipes.models import Recipe, RecipeIngredient
 from reportlab.lib.pagesizes import A5
 from reportlab.pdfgen import canvas
+
+from recipes.models import Recipe, RecipeIngredient
 
 
 def process_shopping_cart(shopping_cart_set):

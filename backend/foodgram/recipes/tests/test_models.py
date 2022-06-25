@@ -2,6 +2,7 @@ import tempfile
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase
+
 from recipes.models import Ingredient, Recipe, RecipeIngredient, Tag
 
 User = get_user_model()
