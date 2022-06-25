@@ -48,9 +48,6 @@ class FoodgramUserViewSet(UserViewSet):
             return CustomUserCreateSerializer
         return super().get_serializer_class()
 
-    # def permission_denied(self, request, **kwargs):
-    #     pass
-
     @action(
         detail=False,
         methods=['get', 'list'],

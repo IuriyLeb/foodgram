@@ -89,6 +89,12 @@ class Recipe(models.Model):
     class Meta:
         verbose_name = 'Рецепт'
         verbose_name_plural = 'Рецепты'
+        constraints = [
+            models.UniqueConstraint(
+                fields=['author', 'name'],
+                name='unique_recipe_name'
+            )
+        ]
 
     def __str__(self):
         return self.name

@@ -128,31 +128,52 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
                   'image', 'name', 'text', 'cooking_time')
         depth = 1
 
-    def create(self, validated_data):
-        ingredients_data = validated_data.pop('recipe_ingredients')
-        tags_data = validated_data.pop('tags')
-        recipe = Recipe.objects.create(**validated_data)
-
+    def get_ingredients_list(self,
+                             ingredients_data,
+                             recipe,
+                             model=RecipeIngredient):
+        """
+        Get ingredients raw data from serializer.
+        Returns list of non-saved RecipeIngredient objects.
+        """
         ingredients_list = []
         for ingredient in ingredients_data:
             ingredients_list.append(
-                RecipeIngredient(
+                model(
                     recipe=recipe,
                     ingredient=ingredient['id'],
                     amount=ingredient['amount']
                 )
             )
-        RecipeIngredient.objects.bulk_create(ingredients_list)
+        return ingredients_list
 
+    def get_tags_list(self, tags_data, recipe, model=RecipeTag):
+        """
+        Get tags raw data from serializer.
+        Returns list of non-saved RecipeTag objects.
+        """
         tags_list = []
         for tag in tags_data:
             tags_list.append(
-                RecipeTag(
+                model(
                     recipe=recipe,
                     tag=tag
                 )
             )
-        RecipeTag.objects.bulk_create(tags_list)
+        return tags_list
+
+    def create(self, validated_data):
+        ingredients_data = validated_data.pop('recipe_ingredients')
+        tags_data = validated_data.pop('tags')
+        recipe = Recipe.objects.create(**validated_data)
+
+        RecipeIngredient.objects.bulk_create(
+            self.get_ingredients_list(ingredients_data, recipe)
+        )
+
+        RecipeTag.objects.bulk_create(
+            self.get_tags_list(tags_data, recipe)
+        )
 
         return recipe
 
@@ -165,22 +186,12 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
             instance.ingredients.clear()
             instance.tags.clear()
             if tags_data:
-                tags_list = []
-                for tag in tags_data:
-                    tags_list.append(
-                        RecipeTag(recipe=instance, tag=tag)
-                    )
-                RecipeTag.objects.bulk_create(tags_list)
-
-            ingredients_list = []
-            for ingredient in ingredients_data:
-                ingredients_list.append(
-                    RecipeIngredient(
-                        recipe=instance,
-                        ingredient=ingredient['id'],
-                        amount=ingredient['amount']
-                    )
+                RecipeTag.objects.bulk_create(
+                    self.get_tags_list(tags_data, instance)
                 )
-            RecipeIngredient.objects.bulk_create(ingredients_list)
+
+            RecipeIngredient.objects.bulk_create(
+                self.get_ingredients_list(ingredients_data, instance)
+            )
             instance.save()
         return instance
