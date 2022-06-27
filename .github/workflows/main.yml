@@ -55,7 +55,7 @@ jobs:
       - name: Build and push backend to Docker Hub
         uses: docker/build-push-action@v2
         with:
-          file: ./backend/foodgram/Dockerfile
+          context: ./backend/foodgram/
           push: true
           tags: ileeb/backend_foodgram:latest
 
