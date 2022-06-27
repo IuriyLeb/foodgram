@@ -10,7 +10,7 @@ services:
 
 
   frontend:
-    image: ileeb/frontend:latest
+    image: ileeb/frontend_foodgram:latest
     volumes:
       - result_build:/app/result_build/build
     depends_on:
@@ -19,7 +19,7 @@ services:
       - ./.env
 
   backend:
-    image: ileeb/foodgram:latest
+    image: ileeb/backend_foodgram:latest
     volumes:
       - static_value:/app/static/
       - media_value:/app/media/

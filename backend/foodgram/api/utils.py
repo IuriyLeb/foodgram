@@ -25,6 +25,7 @@ def process_shopping_cart(shopping_cart_set):
                 ]
             else:
                 ingredients_dict[ingr_name][0] += recipe.amount
+    return ingredients_dict
 
 
 def render_pdf(ingredients):

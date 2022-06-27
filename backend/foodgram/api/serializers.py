@@ -1,4 +1,5 @@
 from django.contrib.auth.models import User
+from django.db import IntegrityError
 from rest_framework import serializers
 
 from recipes.models import Ingredient, Recipe, RecipeIngredient, RecipeTag, Tag
@@ -59,6 +60,11 @@ class WriteRecipeIngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = RecipeIngredient
         fields = ('id', 'amount')
+
+    def validate_amount(self, value):
+        if value <= 0:
+            raise serializers.ValidationError('Некорректное количество')
+        return value
 
 
 class RecipeTagSerializer(serializers.ModelSerializer):
@@ -139,13 +145,12 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
         """
         ingredients_list = []
         for ingredient in ingredients_data:
-            ingredients_list.append(
-                model(
-                    recipe=recipe,
-                    ingredient=ingredient['id'],
-                    amount=ingredient['amount']
-                )
+            obj = model(
+                recipe=recipe,
+                ingredient=ingredient['id'],
+                amount=ingredient['amount']
             )
+            ingredients_list.append(obj)
         return ingredients_list
 
     def get_tags_list(self, tags_data, recipe, model=RecipeTag):
@@ -163,14 +168,23 @@ class WriteRecipeSerializer(serializers.ModelSerializer):
             )
         return tags_list
 
+    def validate_cooking_time(self, value):
+        if value <= 0:
+            raise serializers.ValidationError('Некорректное время')
+        return value
+
     def create(self, validated_data):
         ingredients_data = validated_data.pop('recipe_ingredients')
         tags_data = validated_data.pop('tags')
         recipe = Recipe.objects.create(**validated_data)
 
-        RecipeIngredient.objects.bulk_create(
-            self.get_ingredients_list(ingredients_data, recipe)
-        )
+        try:
+            RecipeIngredient.objects.bulk_create(
+                self.get_ingredients_list(ingredients_data, recipe)
+            )
+        except IntegrityError:
+            recipe.delete()
+            raise serializers.ValidationError('Одинаковые ингредиенты')
 
         RecipeTag.objects.bulk_create(
             self.get_tags_list(tags_data, recipe)

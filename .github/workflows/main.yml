@@ -57,7 +57,7 @@ jobs:
         with:
           file: ./backend/foodgram/Dockerfile
           push: true
-          tags: ileeb/foodgram:latest
+          tags: ileeb/backend_foodgram:latest
 
 
 
