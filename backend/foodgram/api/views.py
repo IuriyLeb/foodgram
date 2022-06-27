@@ -1,4 +1,5 @@
 import os
+import urllib.parse
 
 from django.conf import settings
 from django.db.models import Exists, OuterRef
@@ -34,11 +35,16 @@ class TagViewSet(viewsets.ReadOnlyModelViewSet):
 
 
 class IngredientViewSet(viewsets.ReadOnlyModelViewSet):
-    queryset = Ingredient.objects.all()
     serializer_class = IngredientSerializer
     pagination_class = None
-    filter_backends = (filters.SearchFilter,)
-    search_fields = ('name',)
+
+    def get_queryset(self):
+        queryset = Ingredient.objects.all()
+        name = self.request.query_params.get('name')
+        if name:
+            name = urllib.parse.unquote(name)
+            queryset = queryset.filter(name__istartswith=name)
+        return queryset
 
 
 class RecipeViewSet(viewsets.ModelViewSet):
@@ -63,7 +69,7 @@ class RecipeViewSet(viewsets.ModelViewSet):
             user=user
         )
 
-        is_in_shopping_cart = Favorites.objects.filter(
+        is_in_shopping_cart = ShoppingCart.objects.filter(
             recipe=OuterRef('pk'),
             user=user
         )

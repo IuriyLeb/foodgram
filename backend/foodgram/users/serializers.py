@@ -32,6 +32,18 @@ class CustomUserCreateSerializer(UserCreateSerializer):
                   'username', 'first_name',
                   'last_name', 'password')
 
+    def validate_username(self, value):
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError('Данный никнейм'
+                                              ' уже зарегистрирован')
+        return value
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError('Данный электронный'
+                                              ' адрес уже зарегистрирован')
+        return value
+
 
 class UsersListSerializer(serializers.ModelSerializer):
     """
