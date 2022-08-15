@@ -10,7 +10,7 @@ Also, users can subscribe to another users.
 
 ## Installation
 
-Use the [DockerHub](https://hub.docker.com/) to download YaMDB image.
+Use the [DockerHub](https://hub.docker.com/) to download foodgram image.
 
 ```bash
 docker pull ileeb/foodgram
